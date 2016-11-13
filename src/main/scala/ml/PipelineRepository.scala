@@ -1,18 +1,23 @@
 package ml
 
-import model.AppReader
+import model.{ AppReader }
 import org.apache.spark.ml.{ PipelineModel }
-
-import scalaz.Reader
+import scalaz.\/
 
 trait PipelineRepository {
-  private val baseDir = "/Users/kirill/Documents/Projects/sentiments-service/src/main/resources"
+  private val baseDir = "/Users/kirill/Documents/Projects/sentiment-service/src/main/resources"
 
-  def save(pipeline: PipelineModel, fileName: String): AppReader[Unit] = Reader {
-    spark ⇒ pipeline.write.overwrite().save(s"$baseDir/$fileName")
+  def save(pipeline: PipelineModel, fileName: String): AppReader[Unit] = AppReader[Unit] {
+    spark ⇒
+      \/.fromTryCatchNonFatal {
+        pipeline.write.overwrite().save(s"$baseDir/$fileName")
+      }
   }
 
-  def load(fileName: String): AppReader[PipelineModel] = Reader {
-    spark ⇒ PipelineModel.load(s"$baseDir/$fileName")
+  def load(fileName: String): AppReader[PipelineModel] = AppReader[PipelineModel] {
+    spark ⇒
+      \/.fromTryCatchNonFatal {
+        PipelineModel.load(s"$baseDir/$fileName")
+      }
   }
 }

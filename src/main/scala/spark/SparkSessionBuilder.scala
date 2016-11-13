@@ -8,10 +8,14 @@ trait SparkSessionBuilder {
     val conf = new SparkConf()
       .setMaster("local")
 
-    SparkSession
+    val session = SparkSession
       .builder()
       .config(conf)
       .appName("Moview Review Sentiment Analysis")
       .getOrCreate()
+
+    session.sparkContext.setLogLevel("WARN")
+
+    session
   }
 }

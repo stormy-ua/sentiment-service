@@ -10,6 +10,7 @@ import spray.json.DefaultJsonProtocol._
 import spray.httpx.marshalling.MetaMarshallers._
 import scala.concurrent.{ Promise, Future, ExecutionContext }
 import ExecutionContext.Implicits.global
+import scalaz.{ -\/, \/- }
 import scalaz.std.scalaFuture._
 
 trait SentimentService extends HttpService {
@@ -21,15 +22,22 @@ trait SentimentService extends HttpService {
     respondWithMediaType(`application/json`) {
       post {
         path("estimate") {
-          entity(as[String]) { text ⇒
-            complete {
-              estimationFlow(text)(spark) match {
-                case PositiveSentiment ⇒ SentimentEstimationResponse("positive")
-                case NegativeSentiment ⇒ SentimentEstimationResponse("negative")
+          entity(as[String]) { text ⇒ ctx ⇒
+            estimationFlow(text)(spark) match {
+              case \/-(PositiveSentiment) ⇒ ctx.complete(SentimentEstimationResponse("positive"))
+              case \/-(NegativeSentiment) ⇒ ctx.complete(SentimentEstimationResponse("negative"))
+              case -\/(e)                 ⇒ ctx.failWith(e)
+            }
+          }
+        } ~
+          path("train") {
+            entity(as[String]) { text ⇒
+              complete {
+                trainingFlow(modelName)(spark)
+                "done"
               }
             }
           }
-        }
       }
     }
 }
